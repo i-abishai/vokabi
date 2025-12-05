@@ -152,7 +152,7 @@ function App() {
   // ALL STATE HOOKS MUST BE AT THE TOP - UNCONDITIONALLY
   const [screen, setScreen] = useState('welcome');
   const [profile, setProfile] = useState({ name: '', emoji: '' });
-  const [vocabulary, setVocabulary] = useState(initialVocabulary);
+  const [vocabulary] = useState(initialVocabulary);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [studyMode, setStudyMode] = useState(null);
   const [currentCardIndex, setCurrentCardIndex] = useState(0);
