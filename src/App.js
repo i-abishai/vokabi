@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Heart, Star, Trophy, Sparkles, Trash2, Shuffle, TrendingDown, ChevronLeft, ChevronRight, Home, Book, BarChart3 } from 'lucide-react';
-
+import { Heart, Star, Trophy, Shuffle, TrendingDown, ChevronLeft, ChevronRight, Home, Book, BarChart3 } from 'lucide-react';
 const VokabiApp = () => {
   // Pre-loaded vocabulary with pronunciations
   const initialVocabulary = [
@@ -33,7 +32,7 @@ const VokabiApp = () => {
 
   const [screen, setScreen] = useState('welcome');
   const [profile, setProfile] = useState({ name: '', emoji: '🌸' });
-  const [vocabulary, setVocabulary] = useState(initialVocabulary);
+  const [vocabulary] = useState(initialVocabulary);
   const [studyMode, setStudyMode] = useState(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flipped, setFlipped] = useState(false);
