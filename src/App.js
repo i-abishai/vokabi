@@ -7,7 +7,47 @@ import {
 } from 'lucide-react';
 
 function App() {
-  // Initial vocabulary data - 100+ words in 4 categories
+  // ALL STATE HOOKS MUST BE AT THE TOP - UNCONDITIONALLY
+  const [screen, setScreen] = useState('welcome');
+  const [profile, setProfile] = useState({ name: '', emoji: '' });
+  const [vocabulary, setVocabulary] = useState([]);
+  const [selectedCategory, setSelectedCategory] = useState(null);
+  const [studyMode, setStudyMode] = useState(null);
+  const [currentCardIndex, setCurrentCardIndex] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [score, setScore] = useState(0);
+  const [streak, setStreak] = useState(0);
+  const [level, setLevel] = useState(1);
+  const [stars, setStars] = useState(0);
+  const [badges, setBadges] = useState([]);
+  const [studyCards, setStudyCards] = useState([]);
+  const [favorites, setFavorites] = useState([]);
+  const [difficultWords, setDifficultWords] = useState([]);
+  const [easyWords, setEasyWords] = useState([]);
+  const [completedSets, setCompletedSets] = useState(0);
+  const [recentSticker, setRecentSticker] = useState(null);
+  const [showStickerPopup, setShowStickerPopup] = useState(false);
+  const [analytics, setAnalytics] = useState({
+    studySessions: 0,
+    totalWordsStudied: 0,
+    wordsMastered: 0,
+    totalTimeStudied: 0,
+    dailyStreak: 0,
+    lastStudyDate: null,
+    accuracyByCategory: {},
+    sessionHistory: [],
+    strugglingWords: []
+  });
+
+  // Profile screen state
+  const [tempName, setTempName] = useState('');
+  const [tempEmoji, setTempEmoji] = useState('');
+  
+  // Words screen state
+  const [filterCategory, setFilterCategory] = useState('all');
+  const [filterType, setFilterType] = useState('all');
+
+  // Initial vocabulary data - 115 words in 4 categories
   const initialVocabulary = [
     // Category 1: Academic & General Vocabulary (~40 words)
     { id: 1, english: "Appreciate", turkish: "Takdir etmek", pronunciation: "ıprişieyt", category: "Academic & General" },
@@ -153,39 +193,12 @@ function App() {
   // Sticker options for rewards
   const stickerOptions = ['🌟', '✨', '💫', '⭐', '🌈', '🦋', '🌸', '💖', '🎉', '🏆', '👑', '💎'];
 
-  // State management
-  const [screen, setScreen] = useState('welcome');
-  const [profile, setProfile] = useState({ name: '', emoji: '' });
-  const [vocabulary, setVocabulary] = useState(initialVocabulary);
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [studyMode, setStudyMode] = useState(null); // 'en-tr', 'tr-en', 'shuffle'
-  const [currentCardIndex, setCurrentCardIndex] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [score, setScore] = useState(0);
-  const [streak, setStreak] = useState(0);
-  const [level, setLevel] = useState(1);
-  const [stars, setStars] = useState(0);
-  const [badges, setBadges] = useState(availableBadges);
-  const [studyCards, setStudyCards] = useState([]);
-  const [favorites, setFavorites] = useState([]);
-  const [difficultWords, setDifficultWords] = useState([]);
-  const [easyWords, setEasyWords] = useState([]);
-  const [completedSets, setCompletedSets] = useState(0);
-  const [recentSticker, setRecentSticker] = useState(null);
-  const [showStickerPopup, setShowStickerPopup] = useState(false);
-
-  // Analytics state
-  const [analytics, setAnalytics] = useState({
-    studySessions: 0,
-    totalWordsStudied: 0,
-    wordsMastered: 0,
-    totalTimeStudied: 0,
-    dailyStreak: 0,
-    lastStudyDate: null,
-    accuracyByCategory: {},
-    sessionHistory: [],
-    strugglingWords: []
-  });
+  // Initialize vocabulary on mount
+  useEffect(() => {
+    if (vocabulary.length === 0) {
+      setVocabulary(initialVocabulary);
+    }
+  }, []);
 
   // Load saved data from localStorage
   useEffect(() => {
@@ -211,6 +224,7 @@ function App() {
     if (savedLevel) setLevel(parseInt(savedLevel));
     if (savedStars) setStars(parseInt(savedStars));
     if (savedBadges) setBadges(JSON.parse(savedBadges));
+    else setBadges(availableBadges);
     if (savedFavorites) setFavorites(JSON.parse(savedFavorites));
     if (savedDifficult) setDifficultWords(JSON.parse(savedDifficult));
     if (savedEasy) setEasyWords(JSON.parse(savedEasy));
@@ -270,55 +284,46 @@ function App() {
     const newBadges = [...badges];
     let badgeEarned = false;
 
-    // First word
     if (!newBadges[0].earned && analytics.totalWordsStudied >= 1) {
       newBadges[0].earned = true;
       badgeEarned = true;
     }
 
-    // 10 words
     if (!newBadges[1].earned && analytics.totalWordsStudied >= 10) {
       newBadges[1].earned = true;
       badgeEarned = true;
     }
 
-    // 50 words
     if (!newBadges[2].earned && analytics.totalWordsStudied >= 50) {
       newBadges[2].earned = true;
       badgeEarned = true;
     }
 
-    // 100 words
     if (!newBadges[3].earned && analytics.totalWordsStudied >= 100) {
       newBadges[3].earned = true;
       badgeEarned = true;
     }
 
-    // 3 day streak
     if (!newBadges[4].earned && streak >= 3) {
       newBadges[4].earned = true;
       badgeEarned = true;
     }
 
-    // 7 day streak
     if (!newBadges[5].earned && streak >= 7) {
       newBadges[5].earned = true;
       badgeEarned = true;
     }
 
-    // Perfect set
     if (!newBadges[6].earned && completedSets >= 1) {
       newBadges[6].earned = true;
       badgeEarned = true;
     }
 
-    // Level 5
     if (!newBadges[7].earned && level >= 5) {
       newBadges[7].earned = true;
       badgeEarned = true;
     }
 
-    // 10 favorites
     if (!newBadges[9].earned && favorites.length >= 10) {
       newBadges[9].earned = true;
       badgeEarned = true;
@@ -330,12 +335,10 @@ function App() {
     }
   }, [badges, analytics.totalWordsStudied, streak, completedSets, level, favorites.length]);
 
-  // Check badges when relevant stats change
   useEffect(() => {
     checkBadges();
   }, [checkBadges]);
 
-  // Level up logic
   useEffect(() => {
     const newLevel = Math.floor(score / 200) + 1;
     if (newLevel > level) {
@@ -344,7 +347,6 @@ function App() {
     }
   }, [score, level]);
 
-  // Show random sticker reward
   const showRandomSticker = () => {
     const randomSticker = stickerOptions[Math.floor(Math.random() * stickerOptions.length)];
     setRecentSticker(randomSticker);
@@ -352,20 +354,16 @@ function App() {
     setTimeout(() => setShowStickerPopup(false), 2000);
   };
 
-  // Handle profile creation
   const handleCreateProfile = (name, emoji) => {
     setProfile({ name, emoji });
     setScreen('home');
   };
 
-  // Start studying with instant flow
   const startStudying = (category, mode) => {
     setSelectedCategory(category);
     setStudyMode(mode);
     
     let categoryWords = vocabulary.filter(word => word.category === category);
-    
-    // Shuffle array
     categoryWords = categoryWords.sort(() => Math.random() - 0.5);
     
     setStudyCards(categoryWords);
@@ -373,11 +371,9 @@ function App() {
     setIsFlipped(false);
     setScreen('study');
     
-    // Track session start
     updateAnalytics('sessionStart', { category });
   };
 
-  // Speak word using Web Speech API
   const speakWord = (text, lang = 'en-US') => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
@@ -387,7 +383,6 @@ function App() {
     }
   };
 
-  // Handle card answer
   const handleAnswer = (isCorrect) => {
     const currentCard = studyCards[currentCardIndex];
     
@@ -397,44 +392,37 @@ function App() {
       setStreak(streak + 1);
       setStars(stars + 1);
       
-      // Add to easy words
       if (!easyWords.includes(currentCard.id)) {
         setEasyWords([...easyWords, currentCard.id]);
       }
       
-      // Remove from difficult words if present
       if (difficultWords.includes(currentCard.id)) {
         setDifficultWords(difficultWords.filter(id => id !== currentCard.id));
       }
     } else {
       setStreak(0);
       
-      // Add to difficult words
       if (!difficultWords.includes(currentCard.id)) {
         setDifficultWords([...difficultWords, currentCard.id]);
       }
     }
     
-    // Update analytics
     updateAnalytics('wordStudied', { 
       word: currentCard, 
       correct: isCorrect,
       category: selectedCategory
     });
     
-    // Move to next card
     if (currentCardIndex < studyCards.length - 1) {
       setCurrentCardIndex(currentCardIndex + 1);
       setIsFlipped(false);
     } else {
-      // Session completed
       setCompletedSets(completedSets + 1);
       updateAnalytics('sessionEnd', { category: selectedCategory });
       setScreen('home');
     }
   };
 
-  // Toggle favorite
   const toggleFavorite = (wordId) => {
     if (favorites.includes(wordId)) {
       setFavorites(favorites.filter(id => id !== wordId));
@@ -443,7 +431,6 @@ function App() {
     }
   };
 
-  // Update analytics
   const updateAnalytics = (action, data) => {
     const newAnalytics = { ...analytics };
     const today = new Date().toDateString();
@@ -452,7 +439,6 @@ function App() {
       case 'sessionStart':
         newAnalytics.studySessions += 1;
         
-        // Update daily streak
         if (newAnalytics.lastStudyDate !== today) {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
@@ -470,7 +456,6 @@ function App() {
       case 'wordStudied':
         newAnalytics.totalWordsStudied += 1;
         
-        // Track accuracy by category
         if (!newAnalytics.accuracyByCategory[data.category]) {
           newAnalytics.accuracyByCategory[data.category] = { correct: 0, total: 0 };
         }
@@ -479,7 +464,6 @@ function App() {
           newAnalytics.accuracyByCategory[data.category].correct += 1;
         }
         
-        // Track struggling words
         if (!data.correct) {
           const existingWord = newAnalytics.strugglingWords.find(w => w.id === data.word.id);
           if (existingWord) {
@@ -508,17 +492,14 @@ function App() {
     setAnalytics(newAnalytics);
   };
 
-  // Get categories
   const categories = [...new Set(vocabulary.map(word => word.category))];
 
-  // Render current card
   const renderCurrentCard = () => {
     if (!studyCards[currentCardIndex]) return null;
     
     const card = studyCards[currentCardIndex];
     let frontText, backText, showPronunciation;
     
-    // Determine what to show based on study mode
     if (studyMode === 'shuffle') {
       const randomMode = Math.random() > 0.5 ? 'en-tr' : 'tr-en';
       if (randomMode === 'en-tr') {
@@ -542,12 +523,10 @@ function App() {
     
     return (
       <div className="relative w-full max-w-md mx-auto">
-        {/* Card counter */}
         <div className="text-center mb-4 text-purple-600 font-semibold">
           {currentCardIndex + 1} / {studyCards.length}
         </div>
         
-        {/* 3D Flip Card */}
         <div 
           className="relative h-80 cursor-pointer"
           style={{ perspective: '1000px' }}
@@ -560,7 +539,6 @@ function App() {
               transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)'
             }}
           >
-            {/* Front of card */}
             <div 
               className="absolute w-full h-full bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400 rounded-3xl shadow-2xl p-8 flex flex-col items-center justify-center"
               style={{ backfaceVisibility: 'hidden' }}
@@ -578,7 +556,6 @@ function App() {
               </div>
             </div>
             
-            {/* Back of card */}
             <div 
               className="absolute w-full h-full bg-gradient-to-br from-blue-400 via-purple-400 to-pink-400 rounded-3xl shadow-2xl p-8 flex flex-col items-center justify-center"
               style={{ 
@@ -598,7 +575,6 @@ function App() {
           </div>
         </div>
         
-        {/* Action buttons */}
         <div className="flex gap-4 mt-8 justify-center">
           <button
             type="button"
@@ -621,7 +597,6 @@ function App() {
           </button>
         </div>
         
-        {/* Answer buttons */}
         {isFlipped && (
           <div className="flex gap-4 mt-6">
             <button
@@ -646,7 +621,6 @@ function App() {
     );
   };
 
-  // Welcome Screen
   if (screen === 'welcome') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400 flex items-center justify-center p-4">
@@ -666,11 +640,7 @@ function App() {
     );
   }
 
-  // Profile Creation Screen
   if (screen === 'profile') {
-    const [tempName, setTempName] = useState('');
-    const [tempEmoji, setTempEmoji] = useState('');
-
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full">
@@ -730,11 +700,9 @@ function App() {
     );
   }
 
-  // Home Screen
   if (screen === 'home') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 pb-20">
-        {/* Header with stats */}
         <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 p-6 rounded-b-3xl shadow-lg">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
@@ -747,7 +715,6 @@ function App() {
             <div className="text-4xl animate-bounce">🦋</div>
           </div>
           
-          {/* Stats row */}
           <div className="grid grid-cols-3 gap-3 mt-4">
             <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-xl p-3 text-center">
               <div className="text-2xl mb-1">🏆</div>
@@ -767,7 +734,6 @@ function App() {
           </div>
         </div>
 
-        {/* Main content */}
         <div className="p-6">
           <h3 className="text-2xl font-bold text-purple-600 mb-4">Konu Seç</h3>
           
@@ -824,7 +790,6 @@ function App() {
             })}
           </div>
 
-          {/* Recent badges */}
           <div className="mt-8">
             <h3 className="text-2xl font-bold text-purple-600 mb-4">Rozetler</h3>
             <div className="grid grid-cols-5 gap-3">
@@ -843,7 +808,6 @@ function App() {
           </div>
         </div>
 
-        {/* Sticker popup */}
         {showStickerPopup && (
           <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-50">
             <div className="text-9xl animate-bounce">
@@ -852,7 +816,6 @@ function App() {
           </div>
         )}
 
-        {/* Bottom navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-purple-200 px-6 py-3">
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
             <button
@@ -885,11 +848,9 @@ function App() {
     );
   }
 
-  // Study Screen
   if (screen === 'study') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 p-6">
-        {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button
             type="button"
@@ -911,7 +872,6 @@ function App() {
           </div>
         </div>
 
-        {/* Study content */}
         <div className="max-w-2xl mx-auto">
           {renderCurrentCard()}
         </div>
@@ -919,11 +879,7 @@ function App() {
     );
   }
 
-  // Words Screen
   if (screen === 'words') {
-    const [filterCategory, setFilterCategory] = useState('all');
-    const [filterType, setFilterType] = useState('all'); // all, favorites, difficult, easy
-    
     let displayWords = vocabulary;
     
     if (filterCategory !== 'all') {
@@ -940,11 +896,9 @@ function App() {
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 pb-20">
-        {/* Header */}
         <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 p-6 rounded-b-3xl shadow-lg mb-6">
           <h2 className="text-3xl font-bold text-white mb-4">Tüm Kelimeler</h2>
           
-          {/* Filters */}
           <div className="space-y-3">
             <div className="flex gap-2 overflow-x-auto">
               <button
@@ -1024,7 +978,6 @@ function App() {
           </div>
         </div>
 
-        {/* Words list */}
         <div className="px-6 space-y-3">
           {displayWords.map(word => (
             <div key={word.id} className="bg-white rounded-2xl shadow-md p-4">
@@ -1078,7 +1031,6 @@ function App() {
           )}
         </div>
 
-        {/* Bottom navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-purple-200 px-6 py-3">
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
             <button
@@ -1111,13 +1063,11 @@ function App() {
     );
   }
 
-  // Stats Screen
   if (screen === 'stats') {
     const totalWords = vocabulary.length;
     const studiedWords = analytics.totalWordsStudied;
     const progressPercent = Math.round((studiedWords / totalWords) * 100);
 
-    // Calculate overall accuracy
     let totalCorrect = 0;
     let totalAttempts = 0;
     Object.values(analytics.accuracyByCategory).forEach(cat => {
@@ -1126,21 +1076,18 @@ function App() {
     });
     const overallAccuracy = totalAttempts > 0 ? Math.round((totalCorrect / totalAttempts) * 100) : 0;
 
-    // Get top struggling words
     const topStrugglingWords = analytics.strugglingWords
       .sort((a, b) => b.mistakes - a.mistakes)
       .slice(0, 5);
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-100 to-blue-100 pb-20">
-        {/* Header */}
         <div className="bg-gradient-to-r from-pink-500 via-purple-500 to-blue-500 p-6 rounded-b-3xl shadow-lg mb-6">
           <h2 className="text-3xl font-bold text-white mb-2">İstatistikler</h2>
           <p className="text-purple-100">Gelişimini takip et 📊</p>
         </div>
 
         <div className="px-6 space-y-6">
-          {/* Overview stats */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-white rounded-2xl shadow-md p-4">
               <div className="flex items-center gap-3 mb-2">
@@ -1183,7 +1130,6 @@ function App() {
             </div>
           </div>
 
-          {/* Progress bar */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-purple-600">Genel İlerleme</h3>
@@ -1200,7 +1146,6 @@ function App() {
             </p>
           </div>
 
-          {/* Category accuracy */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h3 className="font-bold text-purple-600 mb-4">Konulara Göre Başarı</h3>
             <div className="space-y-3">
@@ -1226,7 +1171,6 @@ function App() {
             </div>
           </div>
 
-          {/* Struggling words */}
           {topStrugglingWords.length > 0 && (
             <div className="bg-white rounded-2xl shadow-md p-6">
               <h3 className="font-bold text-purple-600 mb-4">En Çok Zorlandığın Kelimeler</h3>
@@ -1246,7 +1190,6 @@ function App() {
             </div>
           )}
 
-          {/* All badges */}
           <div className="bg-white rounded-2xl shadow-md p-6">
             <h3 className="font-bold text-purple-600 mb-4">Tüm Rozetler</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -1267,7 +1210,6 @@ function App() {
             </div>
           </div>
 
-          {/* Recent sessions */}
           {analytics.sessionHistory.length > 0 && (
             <div className="bg-white rounded-2xl shadow-md p-6">
               <h3 className="font-bold text-purple-600 mb-4">Son Çalışma Oturumları</h3>
@@ -1298,7 +1240,6 @@ function App() {
           )}
         </div>
 
-        {/* Bottom navigation */}
         <div className="fixed bottom-0 left-0 right-0 bg-white border-t-2 border-purple-200 px-6 py-3">
           <div className="grid grid-cols-3 gap-4 max-w-md mx-auto">
             <button
