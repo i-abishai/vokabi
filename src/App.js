@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Heart, Star, Trophy, Shuffle, TrendingDown, ChevronLeft, ChevronRight, Home, Book, BarChart3 } from 'lucide-react';
 const VokabiApp = () => {
   // Pre-loaded vocabulary with pronunciations
@@ -52,7 +52,7 @@ const VokabiApp = () => {
   const emojiOptions = ['🌸', '🌺', '💖', '✨', '🦋', '🌈', '🎀', '🍓', '🌙', '⭐', '💫', '🎨', '🧁', '🍰', '🎪'];
   const stickers = ['🌟', '💝', '🎉', '🏆', '👑', '💎', '🦄', '🌻', '🎭', '🎪'];
 
-  const checkBadges = () => {
+ const checkBadges = useCallback(() => {
     const newBadges = [];
     if (score >= 100 && !badges.includes('first-100')) newBadges.push('first-100');
     if (streak >= 5 && !badges.includes('streak-5')) newBadges.push('streak-5');
@@ -64,9 +64,8 @@ const VokabiApp = () => {
       setShowReward({ type: 'badge', badge: newBadges[0] });
       setTimeout(() => setShowReward(null), 3000);
     }
-  };
-
-  useEffect(() => {
+  }, [score, streak, completedSets, stars, badges]);
+useEffect(() => {
     if (score > 0 || streak > 0 || completedSets > 0 || stars > 0) {
       checkBadges();
     }
@@ -76,7 +75,7 @@ const VokabiApp = () => {
       setShowReward({ type: 'level', level: newLevel });
       setTimeout(() => setShowReward(null), 3000);
     }
-  }, [score, streak, completedSets, stars]);
+  }, [score, streak, completedSets, stars, checkBadges, level]);
 
   const startStudy = (mode) => {
     setStudyMode(mode);
